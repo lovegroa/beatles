@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useState,
   type Dispatch,
   type ReactNode,
@@ -57,7 +58,13 @@ interface GameDataType {
 
 const GameContext = createContext<GameDataType | undefined>(undefined);
 
-export function GameProvider({ children }: { children: ReactNode }) {
+export function GameProvider({
+  children,
+  albums,
+}: {
+  children: ReactNode;
+  albums: Band["albums"];
+}) {
   const [username, setUsername] = useState<string>("Alex");
   const [email, setEmail] = useState<string>("lovegroa@gmail.com");
   const [answers, setAnswers] = useState<Band["albums"]>([]);
@@ -84,12 +91,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const handleAnswerSelect = useCallback(
     (albumId: number) => {
-      // Remove the selected album from the available answers
       setAnswers((prev) =>
         prev.filter((album) => album.cover_image_id !== albumId),
       );
 
-      // Update selected ids and process the answer
       setSelectedIds((prevSelectedIds) => {
         const isFirstSelection = prevSelectedIds.length === 0;
         const newSelectedIds = [...prevSelectedIds, albumId];
@@ -98,7 +103,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
           setCompletedAnswers((prev) => [...prev, albumId]);
           setShowTrivia(true);
           if (isFirstSelection) {
-            // Increase score only on first try
             setScore((prev) => prev + 1);
           }
         }
@@ -138,13 +142,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const [correctAlbum, ...randomAlbums] = shuffledAlbums.slice(0, 3);
 
       if (!correctAlbum) {
-        // we've reached the end of the game
         setShowGameOver(true);
         return;
         throw new Error("No random album found");
       }
-
-      // if there's less than 3 albums, add some more, but exclude anything that's already in the random albums
 
       const idsToExclude = randomAlbums
         .map((album) => album.cover_image_id)
@@ -159,7 +160,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const trivia2 = `Did you know that ${correctAlbum.name} has ${correctAlbum.tracks} tracks?`;
       const trivia3 = `Did you know that ${correctAlbum.name} has a length of ${correctAlbum.length}?`;
       const trivias = [trivia1, trivia2, trivia3] as const;
-      const trivia = trivias[Math.floor(Math.random() * trivias.length)]!; // this is safe because we know the array has at least 3 elements
+      const trivia = trivias[Math.floor(Math.random() * trivias.length)]!;
 
       const mixedAlbums = [correctAlbum, ...randomAlbums].sort(
         () => Math.random() - 0.5,
@@ -172,6 +173,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
+
+  useEffect(() => {
+    resetQuestion({ albums, completedAnswers: [] });
+  }, [albums, resetQuestion]);
+
+  useEffect(() => {
+    if (!showTrivia) {
+      resetQuestion({ albums, completedAnswers });
+    }
+  }, [showTrivia, completedAnswers, resetQuestion, albums]);
 
   return (
     <GameContext.Provider

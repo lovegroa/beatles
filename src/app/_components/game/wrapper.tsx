@@ -10,7 +10,7 @@ const Game = dynamic(() => import("./game"), {
 
 export default function GameWrapper({ band }: { band: Band }) {
   return (
-    <GameProvider>
+    <GameProvider albums={band.albums}>
       <Game band={band} />
     </GameProvider>
   );
