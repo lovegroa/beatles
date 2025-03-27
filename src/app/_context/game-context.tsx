@@ -5,223 +5,265 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useState,
+  useMemo,
+  useReducer,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
 } from "react";
-import type { Band } from "../_schemas/band_schema";
+import type { Album } from "../_schemas/band_schema";
+import { generateTrivia, shuffleArray } from "~/lib/utils";
 
-interface GameDataType {
+// Types
+
+type GameState = {
   username: string;
-  setUsername: Dispatch<SetStateAction<string>>;
-
   email: string;
-  setEmail: Dispatch<SetStateAction<string>>;
-
   selectedIds: number[];
-  setSelectedIds: Dispatch<SetStateAction<number[]>>;
-
   correctAnswerId: number;
-  setCorrectAnswerId: Dispatch<SetStateAction<number>>;
-
-  answers: Band["albums"];
-  setAnswers: Dispatch<SetStateAction<Band["albums"]>>;
-
+  answers: Album[];
   score: number;
-  setScore: Dispatch<SetStateAction<number>>;
-
   showTrivia: boolean;
-  setShowTrivia: Dispatch<SetStateAction<boolean>>;
-
   trivia: string;
-  setTrivia: Dispatch<SetStateAction<string>>;
-
   completedAnswers: number[];
-  setCompletedAnswers: Dispatch<SetStateAction<number[]>>;
-
   showGameOver: boolean;
-  setShowGameOver: Dispatch<SetStateAction<boolean>>;
+};
 
+type ResetQuestionOptions = {
+  albums: Album[];
+  completedAnswers: number[];
+};
+
+const INITIAL_STATE: GameState = {
+  username: "test",
+  email: "test@test.com",
+  selectedIds: [],
+  correctAnswerId: 0,
+  answers: [],
+  score: 0,
+  showTrivia: false,
+  trivia: "",
+  completedAnswers: [],
+  showGameOver: false,
+};
+
+// Define action types for the reducer.
+type Action =
+  | { type: "SET_USERNAME"; payload: string }
+  | { type: "SET_EMAIL"; payload: string }
+  | { type: "SET_SELECTED_IDS"; payload: number[] }
+  | { type: "SET_CORRECT_ANSWER_ID"; payload: number }
+  | { type: "SET_ANSWERS"; payload: Album[] }
+  | { type: "SET_SCORE"; payload: number }
+  | { type: "SET_SHOW_TRIVIA"; payload: boolean }
+  | { type: "SET_TRIVIA"; payload: string }
+  | { type: "SET_COMPLETED_ANSWERS"; payload: number[] }
+  | { type: "SET_SHOW_GAME_OVER"; payload: boolean }
+  | { type: "RESET_USER" }
+  | { type: "RESET_GAME" }
+  | { type: "RESET_GAME_AND_USER" }
+  | { type: "HANDLE_ANSWER_SELECT"; payload: number }
+  | { type: "RESET_QUESTION"; payload: ResetQuestionOptions };
+
+// Reducer function that handles all state updates.
+function gameReducer(state: GameState, action: Action): GameState {
+  switch (action.type) {
+    case "SET_USERNAME":
+      return { ...state, username: action.payload };
+    case "SET_EMAIL":
+      return { ...state, email: action.payload };
+    case "SET_SELECTED_IDS":
+      return { ...state, selectedIds: action.payload };
+    case "SET_CORRECT_ANSWER_ID":
+      return { ...state, correctAnswerId: action.payload };
+    case "SET_ANSWERS":
+      return { ...state, answers: action.payload };
+    case "SET_SCORE":
+      return { ...state, score: action.payload };
+    case "SET_SHOW_TRIVIA":
+      return { ...state, showTrivia: action.payload };
+    case "SET_TRIVIA":
+      return { ...state, trivia: action.payload };
+    case "SET_COMPLETED_ANSWERS":
+      return { ...state, completedAnswers: action.payload };
+    case "SET_SHOW_GAME_OVER":
+      return { ...state, showGameOver: action.payload };
+    case "RESET_USER":
+      return { ...state, username: "", email: "" };
+    case "RESET_GAME":
+      return { ...INITIAL_STATE, username: state.username, email: state.email };
+    case "RESET_GAME_AND_USER":
+      return { ...INITIAL_STATE, username: "", email: "" };
+    case "HANDLE_ANSWER_SELECT": {
+      const albumId = action.payload;
+      const isFirstSelection = state.selectedIds.length === 0;
+      const newSelectedIds = [...state.selectedIds, albumId];
+      const isCorrect = albumId === state.correctAnswerId;
+      return {
+        ...state,
+        // Remove the selected album from the answers.
+        answers: state.answers.filter(
+          (album) => album.cover_image_id !== albumId,
+        ),
+        selectedIds: newSelectedIds,
+        completedAnswers: isCorrect
+          ? [...state.completedAnswers, albumId]
+          : state.completedAnswers,
+        showTrivia: isCorrect,
+        score: isCorrect && isFirstSelection ? state.score + 1 : state.score,
+      };
+    }
+    case "RESET_QUESTION": {
+      const { albums, completedAnswers } = action.payload;
+      // Filter out albums that have already been used.
+      const remainingAlbums = albums.filter(
+        (album) => !completedAnswers.includes(album.cover_image_id),
+      );
+      if (remainingAlbums.length === 0) {
+        return { ...state, showGameOver: true };
+      }
+      const shuffledAlbums = shuffleArray(remainingAlbums);
+      const availableAlbums = shuffledAlbums.slice(
+        0,
+        Math.min(3, shuffledAlbums.length),
+      );
+      const [correctAlbum, ...randomAlbums] = availableAlbums;
+      if (!correctAlbum) {
+        throw new Error("No album available for the question");
+      }
+      // Randomize the order of answer choices.
+      const mixedAlbums = shuffleArray([correctAlbum, ...randomAlbums]);
+      return {
+        ...state,
+        correctAnswerId: correctAlbum.cover_image_id,
+        answers: mixedAlbums,
+        selectedIds: [],
+        trivia: generateTrivia(correctAlbum),
+        showTrivia: false,
+      };
+    }
+    default:
+      return state;
+  }
+}
+
+// Create the context interface.
+interface GameContextType extends GameState {
+  setUsername: Dispatch<SetStateAction<string>>;
+  setEmail: Dispatch<SetStateAction<string>>;
+  setSelectedIds: Dispatch<SetStateAction<number[]>>;
+  setCorrectAnswerId: Dispatch<SetStateAction<number>>;
+  setAnswers: Dispatch<SetStateAction<Album[]>>;
+  setScore: Dispatch<SetStateAction<number>>;
+  setShowTrivia: Dispatch<SetStateAction<boolean>>;
+  setTrivia: Dispatch<SetStateAction<string>>;
+  setCompletedAnswers: Dispatch<SetStateAction<number[]>>;
+  setShowGameOver: Dispatch<SetStateAction<boolean>>;
   resetUser: () => void;
-  resetQuestion: ({
-    albums,
-    completedAnswers,
-  }: {
-    albums: Band["albums"];
-    completedAnswers: number[];
-  }) => void;
+  resetQuestion: (options: ResetQuestionOptions) => void;
   resetGame: () => void;
   resetGameAndUser: () => void;
   handleAnswerSelect: (albumId: number) => void;
 }
 
-const GameContext = createContext<GameDataType | undefined>(undefined);
+const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export function GameProvider({
   children,
   albums,
 }: {
   children: ReactNode;
-  albums: Band["albums"];
+  albums: Album[];
 }) {
-  const [username, setUsername] = useState<string>("Alex");
-  const [email, setEmail] = useState<string>("lovegroa@gmail.com");
-  const [answers, setAnswers] = useState<Band["albums"]>([]);
-  const [correctAnswerId, setCorrectAnswerId] = useState<number>(0);
-  const [score, setScore] = useState<number>(0);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [showTrivia, setShowTrivia] = useState<boolean>(false);
-  const [trivia, setTrivia] = useState<string>("");
-  const [completedAnswers, setCompletedAnswers] = useState<number[]>([]);
-  const [showGameOver, setShowGameOver] = useState<boolean>(false);
+  const [state, dispatch] = useReducer(gameReducer, INITIAL_STATE);
 
+  // Dispatch wrappers
   const resetGame = useCallback(() => {
-    setUsername("Alex");
-    setEmail("lovegroa@gmail.com");
-    setAnswers([]);
-    setCorrectAnswerId(0);
-    setScore(0);
-    setSelectedIds([]);
-    setShowTrivia(false);
-    setTrivia("");
-    setCompletedAnswers([]);
-    setShowGameOver(false);
+    dispatch({ type: "RESET_GAME" });
   }, []);
 
-  const handleAnswerSelect = useCallback(
-    (albumId: number) => {
-      setAnswers((prev) =>
-        prev.filter((album) => album.cover_image_id !== albumId),
-      );
+  const resetUser = useCallback(() => {
+    dispatch({ type: "RESET_USER" });
+  }, []);
 
-      setSelectedIds((prevSelectedIds) => {
-        const isFirstSelection = prevSelectedIds.length === 0;
-        const newSelectedIds = [...prevSelectedIds, albumId];
+  const handleAnswerSelect = useCallback((albumId: number) => {
+    dispatch({ type: "HANDLE_ANSWER_SELECT", payload: albumId });
+  }, []);
 
-        if (albumId === correctAnswerId) {
-          setCompletedAnswers((prev) => [...prev, albumId]);
-          setShowTrivia(true);
-          if (isFirstSelection) {
-            setScore((prev) => prev + 1);
-          }
-        }
+  const resetQuestion = useCallback((options: ResetQuestionOptions) => {
+    dispatch({ type: "RESET_QUESTION", payload: options });
+  }, []);
 
-        return newSelectedIds;
-      });
-    },
-    [
-      setAnswers,
-      setSelectedIds,
-      correctAnswerId,
-      setCompletedAnswers,
-      setShowTrivia,
-      setScore,
-    ],
-  );
+  const resetGameAndUser = useCallback(() => {
+    dispatch({ type: "RESET_GAME_AND_USER" });
+  }, []);
 
-  const resetGameAndUser = () => {
-    resetGame();
-    resetUser();
-  };
-
-  const resetUser = () => {
-    setUsername("");
-    setEmail("");
-  };
-
-  const resetQuestion: GameDataType["resetQuestion"] = useCallback(
-    ({ albums, completedAnswers }) => {
-      console.log("resetQuestion");
-      const remainingAlbums = albums.filter(
-        (album) => !completedAnswers.includes(album.cover_image_id),
-      );
-      const shuffledAlbums = [...remainingAlbums].sort(
-        () => Math.random() - 0.5,
-      );
-      const [correctAlbum, ...randomAlbums] = shuffledAlbums.slice(0, 3);
-
-      if (!correctAlbum) {
-        setShowGameOver(true);
-        return;
-        throw new Error("No random album found");
-      }
-
-      const idsToExclude = randomAlbums
-        .map((album) => album.cover_image_id)
-        .concat(correctAlbum.cover_image_id);
-      const additionalAlbums = albums
-        .filter((album) => !idsToExclude.includes(album.cover_image_id))
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3 - idsToExclude.length);
-      randomAlbums.push(...additionalAlbums);
-
-      const trivia1 = `Did you know that ${correctAlbum.name} was released in ${correctAlbum.year_released}`;
-      const trivia2 = `Did you know that ${correctAlbum.name} has ${correctAlbum.tracks} tracks?`;
-      const trivia3 = `Did you know that ${correctAlbum.name} has a length of ${correctAlbum.length}?`;
-      const trivias = [trivia1, trivia2, trivia3] as const;
-      const trivia = trivias[Math.floor(Math.random() * trivias.length)]!;
-
-      const mixedAlbums = [correctAlbum, ...randomAlbums].sort(
-        () => Math.random() - 0.5,
-      );
-
-      setCorrectAnswerId(correctAlbum.cover_image_id);
-      setAnswers(mixedAlbums);
-      setSelectedIds([]);
-      setTrivia(trivia);
-    },
-    [],
-  );
-
+  // Initialize the first question on mount.
   useEffect(() => {
     resetQuestion({ albums, completedAnswers: [] });
   }, [albums, resetQuestion]);
 
+  // Reset question when trivia is hidden and the game is not over.
   useEffect(() => {
-    if (!showTrivia) {
-      resetQuestion({ albums, completedAnswers });
+    if (!state.showTrivia && !state.showGameOver) {
+      resetQuestion({ albums, completedAnswers: state.completedAnswers });
     }
-  }, [showTrivia, completedAnswers, resetQuestion, albums]);
+  }, [
+    state.showTrivia,
+    state.completedAnswers,
+    albums,
+    state.showGameOver,
+    resetQuestion,
+  ]);
+
+  // Memoize the context value to reduce unnecessary re-renders.
+  const contextValue = useMemo<GameContextType>(
+    () => ({
+      ...state,
+      setUsername: (username) =>
+        dispatch({ type: "SET_USERNAME", payload: username }),
+      setEmail: (email) => dispatch({ type: "SET_EMAIL", payload: email }),
+      setSelectedIds: (selectedIds) =>
+        dispatch({ type: "SET_SELECTED_IDS", payload: selectedIds }),
+      setCorrectAnswerId: (id) =>
+        dispatch({ type: "SET_CORRECT_ANSWER_ID", payload: id }),
+      setAnswers: (answers) =>
+        dispatch({ type: "SET_ANSWERS", payload: answers }),
+      setScore: (score) => dispatch({ type: "SET_SCORE", payload: score }),
+      setShowTrivia: (showTrivia) =>
+        dispatch({ type: "SET_SHOW_TRIVIA", payload: showTrivia }),
+      setTrivia: (trivia) => dispatch({ type: "SET_TRIVIA", payload: trivia }),
+      setCompletedAnswers: (completedAnswers) =>
+        dispatch({ type: "SET_COMPLETED_ANSWERS", payload: completedAnswers }),
+      setShowGameOver: (showGameOver) =>
+        dispatch({ type: "SET_SHOW_GAME_OVER", payload: showGameOver }),
+      resetUser,
+      resetQuestion,
+      resetGame,
+      resetGameAndUser,
+      handleAnswerSelect,
+    }),
+    [
+      state,
+      resetUser,
+      resetQuestion,
+      resetGame,
+      resetGameAndUser,
+      handleAnswerSelect,
+    ],
+  );
 
   return (
-    <GameContext.Provider
-      value={{
-        username,
-        email,
-        setUsername,
-        setEmail,
-        correctAnswerId,
-        setCorrectAnswerId,
-        answers,
-        setAnswers,
-        score,
-        setScore,
-        selectedIds,
-        setSelectedIds,
-        showTrivia,
-        setShowTrivia,
-        resetUser,
-        resetQuestion,
-        trivia,
-        setTrivia,
-        completedAnswers,
-        setCompletedAnswers,
-        showGameOver,
-        setShowGameOver,
-        resetGame,
-        resetGameAndUser,
-        handleAnswerSelect,
-      }}
-    >
-      {children}
-    </GameContext.Provider>
+    <GameContext.Provider value={contextValue}>{children}</GameContext.Provider>
   );
 }
 
-export function useGameData() {
+/**
+ * Custom hook to access game data.
+ */
+export function useGameData(): GameContextType {
   const context = useContext(GameContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useGameData must be used within a GameProvider");
   }
   return context;

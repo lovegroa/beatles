@@ -15,3 +15,5 @@ export const bandSchema = z.object({
 });
 
 export type Band = z.infer<typeof bandSchema>;
+
+export type Album = Band["albums"][number];
