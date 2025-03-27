@@ -5,6 +5,18 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "frontend-interview.evidentinsights.com",
+        port: "",
+        pathname: "/album_covers/*"
+      }
+    ]
+  }
+};
 
 export default config;
