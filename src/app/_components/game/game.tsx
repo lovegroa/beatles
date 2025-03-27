@@ -1,11 +1,12 @@
 "use client";
 
-import { useGameData } from "~/app/_context/user-context";
+import { useGameData } from "~/app/_context/game-context";
 import type { Band } from "~/app/_schemas/band_schema";
 import { UserForm } from "../user_form";
-import Image from "next/image";
 import { useEffect } from "react";
-import { Button } from "~/components/ui/button";
+import { GameDisplay } from "./game_display";
+import { GameOverDisplay } from "./game_over_display";
+import { TriviaDisplay } from "./trivia_display";
 
 export default function Game({ band }: { band: Band }) {
   const {
@@ -13,114 +14,75 @@ export default function Game({ band }: { band: Band }) {
     email,
     correctAnswerId,
     answers,
-    setAnswers,
-    setSelectedIds,
-    selectedIds,
-    setScore,
     setShowTrivia,
     resetQuestion,
     score,
     showTrivia,
-    setCompletedAnswers,
     trivia,
     completedAnswers,
     showGameOver,
     resetGame,
     resetGameAndUser,
+    handleAnswerSelect,
   } = useGameData();
 
   const { albums } = band;
+  useGameEffects(albums, resetQuestion, showTrivia, completedAnswers);
 
-  useEffect(() => {
-    // 'initial render when the component is mounted'
-    console.log("render");
-    resetQuestion({ albums, completedAnswers: [] });
-  }, [albums, resetQuestion]);
-
-  useEffect(() => {
-    // this should run only when the selectedIds change a.k.a when the user clicks on a button
-
-    const latestAnswer = selectedIds[selectedIds.length - 1];
-
-    // remove the selected albums from the answers
-    setAnswers((prev) =>
-      prev.filter((album) => !selectedIds.includes(album.cover_image_id)),
-    );
-
-    if (latestAnswer === correctAnswerId) {
-      setCompletedAnswers((prev) => [...prev, latestAnswer]);
-      setShowTrivia(true);
-      if (selectedIds.length === 1) {
-        // if the user got it right on their first try add one to the score
-        setScore((prev) => prev + 1);
-      }
-    }
-  }, [
-    albums,
-    correctAnswerId,
-    resetQuestion,
-    selectedIds,
-    setAnswers,
-    setScore,
-    setShowTrivia,
-    setCompletedAnswers,
-  ]);
-
-  useEffect(() => {
-    if (!showTrivia) {
-      resetQuestion({ albums, completedAnswers });
-    }
-  }, [albums, completedAnswers, resetQuestion, showTrivia]);
-
+  // Render user form if not logged in
   if (!username || !email) {
     return <UserForm />;
   }
 
+  // Conditional render based on game state
   if (showTrivia) {
     return (
-      <div>
-        <p>Correct</p>
-        <p>{trivia}</p>
-        <Button onClick={() => setShowTrivia(false)}>Continue</Button>
-      </div>
+      <TriviaDisplay trivia={trivia} onContinue={() => setShowTrivia(false)} />
     );
   }
 
   if (showGameOver) {
     return (
-      <div className="flex flex-col gap-4">
-        <p>Game Over your score was {score}</p>
-        <Button onClick={() => resetGame()}>Play Again</Button>
-        <Button onClick={() => resetGameAndUser()}>
-          Play as a different user
-        </Button>
-      </div>
+      <GameOverDisplay
+        score={score}
+        onPlayAgain={resetGame}
+        onChangeUser={resetGameAndUser}
+      />
     );
   }
 
   return (
-    <div>
-      <Image
-        src={`https://frontend-interview.evidentinsights.com/album_covers/${correctAnswerId}`}
-        alt={`guess the album cover for ${band.artist}`}
-        width={300}
-        height={300}
-      />
-      Which beatles album cover is this?
-      <div className="flex flex-col gap-4">
-        {answers.map((album) => (
-          <Button
-            onClick={() => {
-              setSelectedIds((prev) => prev.concat(album.cover_image_id));
-            }}
-            key={album.cover_image_id}
-            className="flex gap-4"
-          >
-            {album.name}
-          </Button>
-        ))}
-      </div>
-      <div>{score}</div>
-    </div>
+    <GameDisplay
+      band={band}
+      correctAnswerId={correctAnswerId}
+      answers={answers}
+      onAnswerSelect={handleAnswerSelect}
+      score={score}
+    />
   );
+}
+
+function useGameEffects(
+  albums: Band["albums"],
+  resetQuestion: ({
+    albums,
+    completedAnswers,
+  }: {
+    albums: Band["albums"];
+    completedAnswers: number[];
+  }) => void,
+  showTrivia: boolean,
+  completedAnswers: number[],
+) {
+  useEffect(() => {
+    // Initialise game on mount
+    resetQuestion({ albums, completedAnswers: [] });
+  }, [albums, resetQuestion]);
+
+  useEffect(() => {
+    // Reset question when trivia is dismissed
+    if (!showTrivia) {
+      resetQuestion({ albums, completedAnswers });
+    }
+  }, [showTrivia, albums, completedAnswers, resetQuestion]);
 }

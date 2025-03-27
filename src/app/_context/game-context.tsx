@@ -52,6 +52,7 @@ interface GameDataType {
   }) => void;
   resetGame: () => void;
   resetGameAndUser: () => void;
+  handleAnswerSelect: (albumId: number) => void;
 }
 
 const GameContext = createContext<GameDataType | undefined>(undefined);
@@ -80,6 +81,40 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setCompletedAnswers([]);
     setShowGameOver(false);
   }, []);
+
+  const handleAnswerSelect = useCallback(
+    (albumId: number) => {
+      // Remove the selected album from the available answers
+      setAnswers((prev) =>
+        prev.filter((album) => album.cover_image_id !== albumId),
+      );
+
+      // Update selected ids and process the answer
+      setSelectedIds((prevSelectedIds) => {
+        const isFirstSelection = prevSelectedIds.length === 0;
+        const newSelectedIds = [...prevSelectedIds, albumId];
+
+        if (albumId === correctAnswerId) {
+          setCompletedAnswers((prev) => [...prev, albumId]);
+          setShowTrivia(true);
+          if (isFirstSelection) {
+            // Increase score only on first try
+            setScore((prev) => prev + 1);
+          }
+        }
+
+        return newSelectedIds;
+      });
+    },
+    [
+      setAnswers,
+      setSelectedIds,
+      correctAnswerId,
+      setCompletedAnswers,
+      setShowTrivia,
+      setScore,
+    ],
+  );
 
   const resetGameAndUser = () => {
     resetGame();
@@ -165,6 +200,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setShowGameOver,
         resetGame,
         resetGameAndUser,
+        handleAnswerSelect,
       }}
     >
       {children}

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { GameProvider } from "~/app/_context/user-context";
+import { GameProvider } from "~/app/_context/game-context";
 import type { Band } from "~/app/_schemas/band_schema";
 
 const Game = dynamic(() => import("./game"), {

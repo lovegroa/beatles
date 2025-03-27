@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { useGameData } from "../_context/user-context";
+import { useGameData } from "../_context/game-context";
 
 const formSchema = z.object({
   username: z.string().min(2, {
