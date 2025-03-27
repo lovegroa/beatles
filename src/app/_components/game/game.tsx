@@ -21,14 +21,20 @@ export default function Game({ band }: { band: Band }) {
     resetQuestion,
     score,
     showTrivia,
+    setCompletedAnswers,
     trivia,
+    completedAnswers,
+    showGameOver,
+    resetGame,
+    resetGameAndUser,
   } = useGameData();
 
   const { albums } = band;
 
   useEffect(() => {
+    // 'initial render when the component is mounted'
     console.log("render");
-    resetQuestion(albums);
+    resetQuestion({ albums, completedAnswers: [] });
   }, [albums, resetQuestion]);
 
   useEffect(() => {
@@ -42,12 +48,12 @@ export default function Game({ band }: { band: Band }) {
     );
 
     if (latestAnswer === correctAnswerId) {
+      setCompletedAnswers((prev) => [...prev, latestAnswer]);
       setShowTrivia(true);
       if (selectedIds.length === 1) {
         // if the user got it right on their first try add one to the score
         setScore((prev) => prev + 1);
       }
-      // resetQuestion(albums);
     }
   }, [
     albums,
@@ -57,26 +63,18 @@ export default function Game({ band }: { band: Band }) {
     setAnswers,
     setScore,
     setShowTrivia,
+    setCompletedAnswers,
   ]);
 
   useEffect(() => {
     if (!showTrivia) {
-      resetQuestion(albums);
+      resetQuestion({ albums, completedAnswers });
     }
-  }, [albums, resetQuestion, showTrivia]);
+  }, [albums, completedAnswers, resetQuestion, showTrivia]);
 
   if (!username || !email) {
     return <UserForm />;
   }
-
-  // random answers are selected including the correct album
-  // the user has to guess the correct album
-  // if the user guesses the correct album, the score increases
-  // the user also sees some trivia
-  // the user has to click continue
-  // else the user selects the wrong album
-  // the user has to guess the correct album again
-  // no point will be awarded
 
   if (showTrivia) {
     return (
@@ -84,6 +82,18 @@ export default function Game({ band }: { band: Band }) {
         <p>Correct</p>
         <p>{trivia}</p>
         <Button onClick={() => setShowTrivia(false)}>Continue</Button>
+      </div>
+    );
+  }
+
+  if (showGameOver) {
+    return (
+      <div className="flex flex-col gap-4">
+        <p>Game Over your score was {score}</p>
+        <Button onClick={() => resetGame()}>Play Again</Button>
+        <Button onClick={() => resetGameAndUser()}>
+          Play as a different user
+        </Button>
       </div>
     );
   }
