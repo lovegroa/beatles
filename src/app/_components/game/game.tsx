@@ -8,50 +8,11 @@ import { GameOverDisplay } from "./game_over_display";
 import { TriviaDisplay } from "./trivia_display";
 
 export default function Game({ band }: { band: Band }) {
-  const {
-    username,
-    email,
-    correctAnswerId,
-    answers,
-    setShowTrivia,
-    score,
-    showTrivia,
-    trivia,
-    showGameOver,
-    resetGame,
-    resetGameAndUser,
-    handleAnswerSelect,
-  } = useGameData();
+  const { username, email, showTrivia, showGameOver } = useGameData();
 
-  // Render user form if not logged in
-  if (!username || !email) {
-    return <UserForm />;
-  }
+  if (!username || !email) return <UserForm />;
+  if (showTrivia) return <TriviaDisplay />;
+  if (showGameOver) return <GameOverDisplay />;
 
-  // Conditional render based on game state
-  if (showTrivia) {
-    return (
-      <TriviaDisplay trivia={trivia} onContinue={() => setShowTrivia(false)} />
-    );
-  }
-
-  if (showGameOver) {
-    return (
-      <GameOverDisplay
-        score={score}
-        onPlayAgain={resetGame}
-        onChangeUser={resetGameAndUser}
-      />
-    );
-  }
-
-  return (
-    <GameDisplay
-      band={band}
-      correctAnswerId={correctAnswerId}
-      answers={answers}
-      onAnswerSelect={handleAnswerSelect}
-      score={score}
-    />
-  );
+  return <GameDisplay band={band} />;
 }

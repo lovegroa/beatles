@@ -9,7 +9,6 @@ import {
   useReducer,
   type Dispatch,
   type ReactNode,
-  type SetStateAction,
 } from "react";
 import type { Album } from "../_schemas/band_schema";
 import { generateTrivia, shuffleArray } from "~/lib/utils";
@@ -24,6 +23,7 @@ type GameState = {
   answers: Album[];
   score: number;
   showTrivia: boolean;
+  showWrongAnswer: boolean;
   trivia: string;
   completedAnswers: number[];
   showGameOver: boolean;
@@ -45,6 +45,7 @@ const INITIAL_STATE: GameState = {
   trivia: "",
   completedAnswers: [],
   showGameOver: false,
+  showWrongAnswer: false,
 };
 
 // Define action types for the reducer.
@@ -56,6 +57,7 @@ type Action =
   | { type: "SET_ANSWERS"; payload: Album[] }
   | { type: "SET_SCORE"; payload: number }
   | { type: "SET_SHOW_TRIVIA"; payload: boolean }
+  | { type: "SET_SHOW_WRONG_ANSWER"; payload: boolean }
   | { type: "SET_TRIVIA"; payload: string }
   | { type: "SET_COMPLETED_ANSWERS"; payload: number[] }
   | { type: "SET_SHOW_GAME_OVER"; payload: boolean }
@@ -82,6 +84,8 @@ function gameReducer(state: GameState, action: Action): GameState {
       return { ...state, score: action.payload };
     case "SET_SHOW_TRIVIA":
       return { ...state, showTrivia: action.payload };
+    case "SET_SHOW_WRONG_ANSWER":
+      return { ...state, showWrongAnswer: action.payload };
     case "SET_TRIVIA":
       return { ...state, trivia: action.payload };
     case "SET_COMPLETED_ANSWERS":
@@ -110,29 +114,41 @@ function gameReducer(state: GameState, action: Action): GameState {
           ? [...state.completedAnswers, albumId]
           : state.completedAnswers,
         showTrivia: isCorrect,
+        showWrongAnswer: !isCorrect,
         score: isCorrect && isFirstSelection ? state.score + 1 : state.score,
       };
     }
     case "RESET_QUESTION": {
+      // slightly overengineered, but the benefit is that the user can only use the process of elimination for the final 2 questions
+
       const { albums, completedAnswers } = action.payload;
       // Filter out albums that have already been used.
       const remainingAlbums = albums.filter(
         (album) => !completedAnswers.includes(album.cover_image_id),
       );
+
+      // if there are no remaining albums, the game is over
       if (remainingAlbums.length === 0) {
         return { ...state, showGameOver: true };
       }
+
+      // shuffle the remaining albums and take the first 3, with the first being the correct answer
       const shuffledAlbums = shuffleArray(remainingAlbums);
-      const availableAlbums = shuffledAlbums.slice(
-        0,
-        Math.min(3, shuffledAlbums.length),
-      );
-      const [correctAlbum, ...randomAlbums] = availableAlbums;
+      const initialChoices = shuffledAlbums.slice(0, 3);
+      const [correctAlbum, ...wrongAnswers] = initialChoices;
       if (!correctAlbum) {
+        // should be impossible to reach this point since we've already checked the length
         throw new Error("No album available for the question");
       }
+      // if there's less than 3 albums, add some more, but exclude anything that's already in the random albums
+      const unusedAlbums = albums.filter(
+        (album) => !initialChoices.includes(album),
+      );
+      wrongAnswers.push(...unusedAlbums.slice(0, 2 - wrongAnswers.length));
+
       // Randomize the order of answer choices.
-      const mixedAlbums = shuffleArray([correctAlbum, ...randomAlbums]);
+      const mixedAlbums = shuffleArray([correctAlbum, ...wrongAnswers]);
+
       return {
         ...state,
         correctAnswerId: correctAlbum.cover_image_id,
@@ -149,16 +165,17 @@ function gameReducer(state: GameState, action: Action): GameState {
 
 // Create the context interface.
 interface GameContextType extends GameState {
-  setUsername: Dispatch<SetStateAction<string>>;
-  setEmail: Dispatch<SetStateAction<string>>;
-  setSelectedIds: Dispatch<SetStateAction<number[]>>;
-  setCorrectAnswerId: Dispatch<SetStateAction<number>>;
-  setAnswers: Dispatch<SetStateAction<Album[]>>;
-  setScore: Dispatch<SetStateAction<number>>;
-  setShowTrivia: Dispatch<SetStateAction<boolean>>;
-  setTrivia: Dispatch<SetStateAction<string>>;
-  setCompletedAnswers: Dispatch<SetStateAction<number[]>>;
-  setShowGameOver: Dispatch<SetStateAction<boolean>>;
+  setUsername: Dispatch<string>;
+  setEmail: Dispatch<string>;
+  setSelectedIds: Dispatch<number[]>;
+  setCorrectAnswerId: Dispatch<number>;
+  setAnswers: Dispatch<Album[]>;
+  setScore: Dispatch<number>;
+  setShowTrivia: Dispatch<boolean>;
+  setShowWrongAnswer: Dispatch<boolean>;
+  setTrivia: Dispatch<string>;
+  setCompletedAnswers: Dispatch<number[]>;
+  setShowGameOver: Dispatch<boolean>;
   resetUser: () => void;
   resetQuestion: (options: ResetQuestionOptions) => void;
   resetGame: () => void;
@@ -232,6 +249,8 @@ export function GameProvider({
       setScore: (score) => dispatch({ type: "SET_SCORE", payload: score }),
       setShowTrivia: (showTrivia) =>
         dispatch({ type: "SET_SHOW_TRIVIA", payload: showTrivia }),
+      setShowWrongAnswer: (showWrongAnswer) =>
+        dispatch({ type: "SET_SHOW_WRONG_ANSWER", payload: showWrongAnswer }),
       setTrivia: (trivia) => dispatch({ type: "SET_TRIVIA", payload: trivia }),
       setCompletedAnswers: (completedAnswers) =>
         dispatch({ type: "SET_COMPLETED_ANSWERS", payload: completedAnswers }),
