@@ -27,6 +27,8 @@ type GameState = {
   trivia: string;
   completedAnswers: number[];
   showGameOver: boolean;
+  guesses: number;
+  round: number;
 };
 
 type ResetQuestionOptions = {
@@ -46,6 +48,8 @@ const INITIAL_STATE: GameState = {
   completedAnswers: [],
   showGameOver: false,
   showWrongAnswer: false,
+  guesses: 0,
+  round: 0,
 };
 
 // Define action types for the reducer.
@@ -113,6 +117,7 @@ function gameReducer(state: GameState, action: Action): GameState {
           : state.completedAnswers,
         showTrivia: isCorrect,
         showWrongAnswer: !isCorrect,
+        guesses: state.guesses + 1,
         score: isCorrect && isFirstSelection ? state.score + 1 : state.score,
       };
     }
@@ -149,6 +154,7 @@ function gameReducer(state: GameState, action: Action): GameState {
 
       return {
         ...state,
+        round: state.round + 1,
         correctAnswerId: correctAlbum.cover_image_id,
         answers: mixedAlbums,
         selectedIds: [],
@@ -212,11 +218,6 @@ export function GameProvider({
   const resetGameAndUser = useCallback(() => {
     dispatch({ type: "RESET_GAME_AND_USER" });
   }, []);
-
-  // Initialize the first question on mount.
-  useEffect(() => {
-    resetQuestion({ albums, completedAnswers: [] });
-  }, [albums, resetQuestion]);
 
   // Reset question when trivia is hidden and the game is not over.
   useEffect(() => {

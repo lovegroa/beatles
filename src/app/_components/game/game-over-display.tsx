@@ -5,7 +5,8 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 
 export function GameOverDisplay() {
-  const { score, resetGame, resetGameAndUser } = useGameData();
+  const { score, resetGame, resetGameAndUser, guesses, round, username } =
+    useGameData();
 
   return (
     <motion.div
@@ -20,20 +21,26 @@ export function GameOverDisplay() {
             <Trophy className="h-10 w-10 text-yellow-400" />
           </div>
           <h2 className="mb-2 text-2xl font-bold">Quiz Complete!</h2>
-          <p className="mb-6 text-center text-zinc-400">You scored {score}</p>
+          <p className="mb-6 text-center text-zinc-400">
+            Congratulations {username}
+          </p>
+          <p className="mb-6 text-center text-zinc-400">You scored {score}!</p>
+          <p className="mb-6 text-center text-zinc-400">
+            You made {guesses} guesses over the {round} rounds!
+          </p>
 
           <Button
             onClick={resetGame}
             className="w-full bg-yellow-500 text-black hover:bg-yellow-600"
           >
-            Play Again
+            Play again
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
           <Button
             onClick={resetGameAndUser}
             className="w-full bg-yellow-500 text-black hover:bg-yellow-600"
           >
-            Play Again as a different user
+            Play again as a different user
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </CardContent>

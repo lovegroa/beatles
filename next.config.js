@@ -6,17 +6,16 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
-
   images: {
     remotePatterns: [
       {
         protocol: "https",
         hostname: "frontend-interview.evidentinsights.com",
         port: "",
-        pathname: "/album_covers/*"
-      }
-    ]
-  }
+        pathname: "/album_covers/*",
+      },
+    ],
+  },
 };
 
 export default config;

@@ -7,7 +7,7 @@ import { useGameData } from "~/app/_context/game-context";
 import { useEffect, useState } from "react";
 
 export function GameDisplay() {
-  const { correctAnswerId, answers, showTrivia } = useGameData();
+  const { correctAnswerId, answers, showTrivia, round } = useGameData();
 
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -69,7 +69,7 @@ export function GameDisplay() {
         </CardHeader>
         <CardContent className="p-6">
           <h2 className="mb-4 text-xl font-semibold">
-            Which album cover is this?
+            Round {round}: Which album cover is this?
           </h2>
           <div className="space-y-3">
             {answers.map((album, index) => (
