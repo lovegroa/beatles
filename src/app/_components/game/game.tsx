@@ -1,18 +1,37 @@
 "use client";
 
+import { AnimatePresence } from "framer-motion";
+import { Disc3, Trophy } from "lucide-react";
+import { GameDisplay } from "./game-display";
+import { GameOverDisplay } from "./game-over-display";
+import { UserForm } from "./user-form";
 import { useGameData } from "~/app/_context/game-context";
-import type { Band } from "~/app/_schemas/band_schema";
-import { UserForm } from "../user_form";
-import { GameDisplay } from "./game_display";
-import { GameOverDisplay } from "./game_over_display";
-import { TriviaDisplay } from "./trivia_display";
 
-export default function Game({ band }: { band: Band }) {
-  const { username, email, showTrivia, showGameOver } = useGameData();
+export default function Game() {
+  const { score, showGameOver, username, email } = useGameData();
 
-  if (!username || !email) return <UserForm />;
-  if (showTrivia) return <TriviaDisplay />;
-  if (showGameOver) return <GameOverDisplay />;
+  const screenController = () => {
+    if (!username || !email) return <UserForm />;
+    if (showGameOver) return <GameOverDisplay />;
+    return <GameDisplay />;
+  };
 
-  return <GameDisplay band={band} />;
+  return (
+    <div className="flex flex-col items-center justify-center bg-gradient-to-b from-black to-zinc-900 p-4">
+      <div className="flex h-full w-full flex-col justify-start md:w-md">
+        <header className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Disc3 className="h-6 w-6 text-yellow-400" />
+            <h1 className="text-2xl font-bold text-white">Beatles Quiz</h1>
+          </div>
+          <div className="flex items-center gap-2 rounded-full bg-zinc-800/50 px-3 py-1">
+            <Trophy className="h-4 w-4 text-yellow-400" />
+            <span className="font-medium text-white">Score: {score}</span>
+          </div>
+        </header>
+
+        <AnimatePresence mode="wait">{screenController()}</AnimatePresence>
+      </div>
+    </div>
+  );
 }

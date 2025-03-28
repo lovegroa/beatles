@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { Album } from "~/app/_schemas/band_schema";
+import type { Album } from "~/app/_schemas/band-schema";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

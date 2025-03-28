@@ -1,4 +1,4 @@
-import { bandSchema } from "./_schemas/band_schema";
+import { bandSchema } from "./_schemas/band-schema";
 import GameWrapper from "./_components/game/wrapper";
 import ErrorMessage from "./_components/error_message";
 

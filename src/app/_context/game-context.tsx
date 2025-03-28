@@ -10,7 +10,7 @@ import {
   type Dispatch,
   type ReactNode,
 } from "react";
-import type { Album } from "../_schemas/band_schema";
+import type { Album } from "../_schemas/band-schema";
 import { generateTrivia, shuffleArray } from "~/lib/utils";
 
 // Types
@@ -35,8 +35,8 @@ type ResetQuestionOptions = {
 };
 
 const INITIAL_STATE: GameState = {
-  username: "test",
-  email: "test@test.com",
+  username: "",
+  email: "",
   selectedIds: [],
   correctAnswerId: 0,
   answers: [],
@@ -106,9 +106,7 @@ function gameReducer(state: GameState, action: Action): GameState {
       return {
         ...state,
         // Remove the selected album from the answers.
-        answers: state.answers.filter(
-          (album) => album.cover_image_id !== albumId,
-        ),
+
         selectedIds: newSelectedIds,
         completedAnswers: isCorrect
           ? [...state.completedAnswers, albumId]
@@ -277,9 +275,6 @@ export function GameProvider({
   );
 }
 
-/**
- * Custom hook to access game data.
- */
 export function useGameData(): GameContextType {
   const context = useContext(GameContext);
   if (!context) {
