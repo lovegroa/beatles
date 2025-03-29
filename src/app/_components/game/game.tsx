@@ -17,21 +17,19 @@ export default function Game() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center bg-gradient-to-b from-black to-zinc-900 p-4">
-      <div className="flex h-full w-full flex-col justify-start md:w-md">
-        <header className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Disc3 className="h-6 w-6 text-yellow-400" />
-            <h1 className="text-2xl font-bold text-white">Beatles Quiz</h1>
-          </div>
-          <div className="flex items-center gap-2 rounded-full bg-zinc-800/50 px-3 py-1">
-            <Trophy className="h-4 w-4 text-yellow-400" />
-            <span className="font-medium text-white">Score: {score}</span>
-          </div>
-        </header>
+    <div className="flex max-h-full w-full flex-col justify-center gap-6 md:w-md">
+      <header className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Disc3 className="h-6 w-6 text-yellow-400" />
+          <h1 className="text-2xl font-bold text-white">Beatles Quiz</h1>
+        </div>
+        <div className="flex items-center gap-2 rounded-full bg-zinc-800/50 px-3 py-1">
+          <Trophy className="h-4 w-4 text-yellow-400" />
+          <span className="font-medium text-white">Score: {score}</span>
+        </div>
+      </header>
 
-        <AnimatePresence mode="wait">{screenController()}</AnimatePresence>
-      </div>
+      <AnimatePresence mode="wait">{screenController()}</AnimatePresence>
     </div>
   );
 }

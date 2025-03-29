@@ -21,8 +21,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable} ${quicksand.variable}`}>
-      <body>{children}</body>
+    <html
+      lang="en"
+      className={`${geist.variable} ${quicksand.variable} h-full w-full`}
+    >
+      <body className="h-full w-full">{children}</body>
     </html>
   );
 }

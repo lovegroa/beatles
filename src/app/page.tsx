@@ -29,7 +29,7 @@ async function fetchBandData() {
 
 export default async function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#000000] to-[#1c1c1c] p-4 text-white">
+    <main className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-[#000000] to-[#1c1c1c] p-4 text-white">
       <GameContent />
     </main>
   );

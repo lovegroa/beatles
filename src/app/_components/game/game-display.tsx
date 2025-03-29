@@ -18,19 +18,20 @@ export function GameDisplay() {
   return (
     <motion.div
       key="question"
+      className="h-full overflow-hidden"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="overflow-hidden border-0 bg-zinc-800/50 text-white backdrop-blur-sm">
+      <Card className="max-h-full gap-2 overflow-hidden border-0 bg-zinc-800/50 p-0 text-white backdrop-blur-sm">
         <CardHeader className="relative w-full overflow-hidden p-0">
-          <div className="relative aspect-square w-full overflow-hidden rounded-t-lg">
+          <div className="relative aspect-square w-full">
             <AnimatePresence mode="wait">
               {showTrivia ? (
                 <motion.div
                   layout
-                  className="absolute inset-0 h-full p-4"
+                  className="h-full"
                   key="trivia"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -43,7 +44,6 @@ export function GameDisplay() {
                 <motion.div
                   layout
                   key="image"
-                  className="absolute inset-0"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.05 }}
@@ -53,7 +53,6 @@ export function GameDisplay() {
                     src={`https://frontend-interview.evidentinsights.com/album_covers/${correctAnswerId}`}
                     alt={`Guess the album cover`}
                     fill
-                    className="p-4"
                     style={{
                       objectFit: "cover",
                       transition: "opacity 2s ease-in-out",
@@ -67,11 +66,12 @@ export function GameDisplay() {
             </AnimatePresence>
           </div>
         </CardHeader>
-        <CardContent className="p-6">
-          <h2 className="mb-4 text-xl font-semibold">
-            Round {round}: Which album cover is this?
+        <CardContent className="flex flex-col gap-4 p-4">
+          <h2 className="flex flex-col gap-0 text-xl font-semibold md:flex-row md:gap-4">
+            <span>Round {round}: </span>
+            <span className="nowrap">Which album cover is this?</span>
           </h2>
-          <div className="space-y-3">
+          <div className="flex flex-col gap-2">
             {answers.map((album, index) => (
               <QuizButton
                 key={album.cover_image_id}
