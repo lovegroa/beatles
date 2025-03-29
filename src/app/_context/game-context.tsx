@@ -99,9 +99,19 @@ function gameReducer(state: GameState, action: Action): GameState {
     case "RESET_USER":
       return { ...state, username: "", email: "" };
     case "RESET_GAME":
-      return { ...INITIAL_STATE, username: state.username, email: state.email };
+      return {
+        ...INITIAL_STATE,
+        username: state.username,
+        email: state.email,
+        correctAnswerId: state.correctAnswerId, // this will be reset using the useEffect, If set back to 0 causes a minor server error trying to fetch an image
+      };
     case "RESET_GAME_AND_USER":
-      return { ...INITIAL_STATE, username: "", email: "" };
+      return {
+        ...INITIAL_STATE,
+        username: "",
+        email: "",
+        correctAnswerId: state.correctAnswerId, // this will be reset using the useEffect, If set back to 0 causes a minor server error trying to fetch an image
+      };
     case "HANDLE_ANSWER_SELECT": {
       const albumId = action.payload;
       const isFirstSelection = state.selectedIds.length === 0;

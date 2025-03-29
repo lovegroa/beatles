@@ -1,10 +1,16 @@
 import "~/styles/globals.css";
 
-import { type Metadata } from "next";
+import { type Metadata, type Viewport } from "next";
 import { Anton, Quicksand } from "next/font/google";
 
 export const metadata: Metadata = {
   icons: [{ rel: "icon", type: "image/svg+xml", url: "/favicon.svg" }],
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const geist = Anton({

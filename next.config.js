@@ -15,6 +15,7 @@ const config = {
         pathname: "/album_covers/*",
       },
     ],
+    minimumCacheTTL: 60 * 60, // next now caches images for 1 hour
   },
 };
 

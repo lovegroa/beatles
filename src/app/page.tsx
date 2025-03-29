@@ -12,12 +12,11 @@ export const metadata = {
       "Test your knowledge of The Beatles Album Covers in this interactive game",
     type: "website",
   },
-  viewport: "width=device-width, initial-scale=1",
 };
 
 async function fetchBandData() {
   const data = await fetch("https://frontend-interview.evidentinsights.com", {
-    next: { revalidate: 300 }, // revalidate every 5 minutes
+    next: { revalidate: 60 * 60 }, // revalidate every hour
   });
 
   if (!data.ok) {
